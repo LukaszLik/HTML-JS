@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<style>
+.button1 {
+  background-color: #008CBA;
+  border: 2px solid #555555;
+  color: white;
+  padding: 30px 50px;
+  text-align: center;
+  text-decoration: none;
+  display: inline-block;
+  font-size: 16px;
+  margin: 4px 2px;
+  cursor: pointer;
+  border-radius: 7px;
+  position: absolute;
+}
+
+#container {
+  /* display: inline-block;
+  position: relative; */
+}
+
+#startBtn {
+	background-color: #008CBA;
+  border: 3px solid #555555;
+  padding: 30px 50px;
+  position: absolute;
+  border-radius: 7px;
+  font-size: 30px;
+  top: 35%;
+  left: 50%;
+  z-index: 1;
+  transform: translate(-50%,-50%);
+  -webkit-transform: translate(-50%,-50%);
+  -moz-transform: translate(-50%,-50%);
+  -ms-transform: translate(-50%,-50%);
+}
+
+#highscoreBtn {
+	background-color: #008CBA;
+  border: 3px solid #555555;
+  padding: 30px 50px;
+  position: absolute;
+  border-radius: 7px;
+  font-size: 30px;
+  top: 50%;
+  left: 50%;
+  z-index: 1;
+  transform: translate(-50%,-50%);
+  -webkit-transform: translate(-50%,-50%);
+  -moz-transform: translate(-50%,-50%);
+  -ms-transform: translate(-50%,-50%);
+}
+#inputDiv{
+  padding-left: 95%;
+  padding-top: 70%;
+  z-index: 1;
+  transform: translate(-50%,-50%);
+  -webkit-transform: translate(-50%,-50%);
+  -moz-transform: translate(-50%,-50%);
+  -ms-transform: translate(-50%,-50%);
+
+
+}
+
+#highscoreDiv{
+  padding-left: 30%;
+  padding-bottom: 100%;
+  z-index: 1;
+  transform: translate(-50%,-50%);
+  -webkit-transform: translate(-50%,-50%);
+  -moz-transform: translate(-50%,-50%);
+  -ms-transform: translate(-50%,-50%);
+  max-width: 500px;
+}
+
+#highscoreTable{
+  border: 2px solid black;
+}
+
+td{
+  border: 1px solid black;
+}
+
+canvas{
+  background-color: #888888 ;
+  margin-left: 50%;
+  left:-400px;
+  float:left;
+  position: absolute;
+}
+
+}
+</style>
+<title>SpaceInvaders</title>
+<script src="./js/class01.js"></script>
+</head>
+<body>
+
+	<div id="container">
+
+		<button class="button" id="startBtn" onclick="if (this.getAttribute('clicked') == '1') { return false; } else { this.setAttribute('clicked', '1'); play();console.log('PLAY');}"> Rozpocznij Gre!</button>
+    <button id="highscoreBtn" onclick="showHighscores()">Pokaż wyniki</button>
+
+  	<canvas width="800" height="800" id="can">
+			<div style="display:block;">
+			<img id="alien01"
+			src="alien2.png"
+			width="300" height="227">
+
+			<img id="ship"
+			src="ship.png"
+			width="300" height="227">
+			</div>
+		</canvas>
+    <div id="inputDiv" >
+      <label>Zapisz swój wynik:</label>
+      <input id="name" placeholder="podaj swój nick"/>
+
+      <button onclick="sendScore()">Wyslij</button>
+
+    </div>
+
+    <div id="highscoreDiv">
+      <table id="highscoreTable" style="width:50%">
+
+        </table>
+    </div>
+
+  </div>
+
+<script>
+var canvas = document.getElementById("can");
+var input = document.getElementById("inputDiv");
+input.style.visibility = 'hidden';
+
+var highscoreTable = document.getElementById("highscoreDiv");
+highscoreTable.style.visibility = 'hidden';
+
+var posX = 50;
+var alreadyShot = false;
+var bullet;
+var active = setInterval(moveShipLeft);
+clearInterval(active);
+var startBtn = document.getElementById("startBtn");
+var highscoreBtn = document.getElementById("highscoreBtn");
+var intervalWon;
+var intervalLost = new Array();
+var intervalClearAliens = new Array();
+var intervalTrackScore;
+var score = 0;
+var alienNbr = 3;
+var lostFlag = 0;
+
+function play()
+{
+  highscoreTable.style.visibility = 'hidden';
+  highscoreBtn.style.visibility = 'hidden';
+  var input = document.getElementById("inputDiv");
+  input.style.visibility = 'hidden';
+
+	var i;
+	//console.log("PLAY FUNC");
+	clearInterval(intervalWon);
+	clearInterval(intervalTrackScore);
+
+	if (lostFlag)
+	{
+		score = 0;
+		alienNbr = 3;
+		lostFlag = 0;
+	}
+
+	for (i  = 0; i < intervalLost.length; i++)
+		clearInterval(intervalLost[i]);
+
+	for (i  = 0; i < intervalClearAliens.length; i++)
+		clearInterval(intervalClearAliens[i]);
+
+	posX = 50;
+
+	var c = canvas.getContext('2d')
+	c.clearRect(0,0, canvas.width, canvas.height)
+
+	startBtn.setAttribute('clicked', '1');
+	startBtn.style.display = 'none';
+	var alienArray = new Array();
+	moveShip();
+
+	for (i = 0; i < alienNbr; i++)
+		alienArray.push(spawnAlien(50 + (i*(750 / alienNbr)), 25));
+
+	for (i = 0; i < alienNbr; i++)
+		intervalClearAliens[i] = setInterval(moveAlien.bind(null,
+									alienArray[i]), 1000/60);
+
+	for (i = 0; i< alienNbr; i++)
+		{
+			intervalLost[i] = setInterval(isLost.bind(null, alienArray[i]), 100)}
+
+	intervalWon = setInterval(isWon.bind(null,alienArray ), 100);
+
+	intervalTrackScore = setInterval(trackScore.bind(null), 1000/60);
+	document.onkeyup = stopIntervals;
+	document.onkeydown = checkKey;
+
+	function stopIntervals(e)
+	{
+		console.log(active)
+		if (e.keyCode == '37')
+		{
+			//console.log("leftUP");
+			clearInterval(active);
+		}
+
+		else if (e.keyCode == '39')
+		{
+			//console.log("rightUP");
+			clearInterval(active);
+		}
+	}
+
+	function checkKey(e)
+	{
+		e = e || window.event;
+
+		if (e.keyCode == '37')
+		{
+
+			clearInterval(active);
+			active = setInterval(moveShipLeft);
+		}
+
+		else if (e.keyCode == '39')
+		{
+
+			clearInterval(active);
+			active = setInterval(moveShipRight);
+		}
+
+		else if (e.keyCode == '32')
+		{
+			if (!alreadyShot)
+			{
+				bullet = shoot(posX, 750);
+				alreadyShot = true;
+				activeBullet = setInterval(moveBullet.bind(null, bullet, alienArray));
+			}
+		}
+	}
+}
+
+</script>
+
+</body>
+</html>
