@@ -1,0 +1,4 @@
+1. Use "make" command to compile all list implementations.
+2. Generate random test using "./genList.x [SIZE] > listTest.txt"
+3. Use input stream to test choosenlist "./___List.x < listTest.txt"
+4. Use "make clean" to delete all .x and .txt files.
